@@ -42,6 +42,7 @@ namespace ymd {
     std::ifstream ifs(filename,std::ios::in | std::ios::binary);
     if(!ifs.is_open()){
       std::cerr << "Fail to Open " << filename << std::endl;
+      std::exit(1);
     }
 
     std::uint32_t magic_number,Nitem,Nrows,Ncolumns;
