@@ -38,7 +38,9 @@ namespace ymd {
     return (... + read_byte(ifs,args));
   }
 
-  inline auto read_MNIST(std::string filename,bool normalize = true){
+  inline auto read_MNIST(std::string filename,
+			 std::uint32_t size = 0,
+			 bool normalize = true){
     std::ifstream ifs(filename,std::ios::in | std::ios::binary);
     if(!ifs.is_open()){
       std::cerr << "Fail to Open " << filename << std::endl;
@@ -52,8 +54,9 @@ namespace ymd {
       std::cerr << "Fail to Read" << std::endl;
     }
 
-    std::cout << magic_number << " (image:2051, label:2049)" << std::endl;
-    std::cout << Nitem << std::endl;
+    std::cout << "magic number: " << magic_number
+	      << " (image:2051, label:2049)" << std::endl;
+    std::cout << "# items: " <<  Nitem << std::endl;
 
     std::function<std::vector<double>()> f;
     std::function<double(double)> normalizer = (normalize) ?
@@ -86,6 +89,10 @@ namespace ymd {
 	    return label;
 	  };
       break;
+    }
+
+    if(size){
+      Nitem = std::min(Nitem,size);
     }
 
     auto data = std::vector<std::vector<double>>{};
