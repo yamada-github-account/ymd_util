@@ -40,7 +40,8 @@ namespace ymd {
 
   inline auto read_MNIST(std::string filename,
 			 std::uint32_t size = 0,
-			 bool normalize = true){
+			 bool normalize = true,
+			 bool is_debug = false){
     std::ifstream ifs(filename,std::ios::in | std::ios::binary);
     if(!ifs.is_open()){
       std::cerr << "Fail to Open " << filename << std::endl;
@@ -48,25 +49,29 @@ namespace ymd {
     }
 
     std::uint32_t magic_number,Nitem,Nrows,Ncolumns;
+    constexpr const uint32_t IMAGE = 2051;
+    constexpr const uint32_t LABEL = 2049;
 
     ymd::read_bytes(ifs,magic_number,Nitem);
     if(!ifs.good()){
       std::cerr << "Fail to Read" << std::endl;
     }
 
-    std::cout << "magic number: " << magic_number
-	      << " (image:2051, label:2049)" << std::endl;
-    std::cout << "# items: " <<  Nitem << std::endl;
+    if(is_debug){
+      std::cout << "magic number: " << magic_number
+		<< " (image:" << IMAGE << ", label:" << LABEL << ")" << std::endl;
+      std::cout << "# items: " <<  Nitem << std::endl;
+    }
 
     std::function<std::vector<double>()> f;
     std::function<double(double)> normalizer = (normalize) ?
-      [](double d){ return(d - 128)/2.0; } :
+      [](double d){ return (d - 128)/128.0; } :
       [](double d){ return d; };
 
     switch(magic_number){
-    case 2051:
+    case IMAGE:
       ymd::read_bytes(ifs,Nrows,Ncolumns);
-      std::cout << Nrows << " x " << Ncolumns << std::endl;
+      if(is_debug){ std::cout << Nrows << " x " << Ncolumns << std::endl; }
       f = [&](){
 	    auto image = std::vector<double>{};
 	    image.reserve(Nrows*Ncolumns);
@@ -80,7 +85,7 @@ namespace ymd {
 	  };
       break;
 
-    case 2049:
+    case LABEL:
       f = [&](){
 	    auto label = std::vector<double>(10,0.0);
 	    std::uint8_t byte;

@@ -4,6 +4,7 @@
 #include <iterator>
 #include <tuple>
 #include <algorithm>
+#include <type_traits>
 
 //  Requirement: c++17 (std::apply)
 //  Preferable : c++2a (structured bindings)
@@ -25,12 +26,16 @@
 
 namespace ymd {
   namespace detail {
-        template<typename...Types> class zip_iterator {
+    template<typename...Types> class zip_iterator {
     private:
       std::tuple<Types...> iterator;
 
     public:
       using iterator_category = std::input_iterator_tag;
+      using difference_type = ptrdiff_t;
+      using value_type = decltype(std::tie((*std::declval<Types>())...));
+      using pointer = std::add_pointer_t<value_type>;
+      using reference = std::add_lvalue_reference_t<value_type>;
 
       zip_iterator() = default;
       zip_iterator(const zip_iterator&) = default;
@@ -55,28 +60,28 @@ namespace ymd {
 	return std::apply([](auto&&...v){ return std::tie((*v)...); },iterator);
       }
 
-      friend auto operator<(const zip_iterator<Types...>& lhs,
-			    const zip_iterator<Types...>& rhs){
+      friend inline auto operator<(const zip_iterator<Types...>& lhs,
+				   const zip_iterator<Types...>& rhs){
 	return lhs.iterator < rhs.iterator;
       }
-      friend auto operator>(const zip_iterator<Types...>& lhs,
-			    const zip_iterator<Types...>& rhs){
-	return rhs > lhs;
+      friend inline auto operator>(const zip_iterator<Types...>& lhs,
+				   const zip_iterator<Types...>& rhs){
+	return rhs < lhs;
       }
-      friend auto operator==(const zip_iterator<Types...>& lhs,
-			     const zip_iterator<Types...>& rhs){
+      friend inline auto operator==(const zip_iterator<Types...>& lhs,
+				    const zip_iterator<Types...>& rhs){
 	return lhs.iterator == rhs.iterator;
       }
-      friend auto operator!=(const zip_iterator<Types...>& lhs,
-			     const zip_iterator<Types...>& rhs){
+      friend inline auto operator!=(const zip_iterator<Types...>& lhs,
+				    const zip_iterator<Types...>& rhs){
 	return !(lhs == rhs);
       }
-      friend auto operator<=(const zip_iterator<Types...>& lhs,
-			     const zip_iterator<Types...>& rhs){
+      friend inline auto operator<=(const zip_iterator<Types...>& lhs,
+				    const zip_iterator<Types...>& rhs){
 	return (lhs < rhs) || (lhs == rhs);
       }
-      friend auto operator>=(const zip_iterator<Types...>& lhs,
-			     const zip_iterator<Types...>& rhs){
+      friend inline auto operator>=(const zip_iterator<Types...>& lhs,
+				    const zip_iterator<Types...>& rhs){
 	return (lhs > rhs) || (lhs == rhs);
       }
     };
@@ -98,6 +103,9 @@ namespace ymd {
       auto begin(){ return zip_iterator<Types...>{begins}; }
       auto   end(){ return zip_iterator<Types...>{  ends}; }
     };
+
+    template<typename T> inline auto begin(T&& t){ t.begin(); }
+    template<typename T> inline auto end(T&& t){ t.end(); }
   } // namespace detail
 
   template<typename...Types> auto zip(Types&&...v){
